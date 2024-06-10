@@ -1,9 +1,9 @@
-import birl.{type Time}
+import birl
 import birl/duration
 import gleam/int
 import gleam/list
-import gleam/option.{type Option, None, Some}
-import types.{type Entry, type RespData, Array, BulkString, Entry, SimpleString}
+import gleam/option.{None, Some}
+import types.{type Entry, type RespData, Array, BulkString, Entry}
 
 pub type Command {
   Ping

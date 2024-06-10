@@ -20,6 +20,9 @@ glisten = "~> 2.0"
 carpenter = ">= 0.3.1 and < 1.0.0"
 birl = ">= 1.6.1 and < 2.0.0"
 flash = ">= 1.0.0 and < 2.0.0"
+bravo = ">= 3.1.0 and < 4.0.0"
+argv = ">= 1.0.2 and < 2.0.0"
+mug = ">= 1.0.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = "~> 1.0"

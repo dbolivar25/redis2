@@ -1,4 +1,4 @@
-import conn.{type ConnMessage, Ack, Forward}
+import conn.{type ConnMessage, Forward}
 import flash
 import gleam/erlang/process.{type Subject}
 import gleam/list
@@ -16,13 +16,14 @@ pub type ConnManagerMessage {
 
 pub type ConnManager {
   ConnManager(
+    // master: Option(Subject(Message(MasterConnMessage))),
     clients: List(Subject(Message(ConnMessage))),
     replicas: List(Subject(Message(ConnMessage))),
   )
 }
 
 pub fn new() {
-  actor.start(default(), on_msg_fn())
+  actor.start(ConnManager([], []), on_msg_fn())
 }
 
 pub fn add_conn(
@@ -55,10 +56,6 @@ pub fn set_replica(
 
 pub fn send_to_replicas(actor: Subject(ConnManagerMessage), msg: BitArray) {
   actor.send(actor, SendToReplicas(msg))
-}
-
-fn default() {
-  ConnManager([], [])
 }
 
 fn on_msg_fn() {

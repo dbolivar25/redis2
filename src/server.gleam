@@ -1,28 +1,23 @@
-import carpenter/table.{type Set}
-import codec.{Incomplete}
+import bravo/uset.{type USet}
+import codec
 import command.{
-  type Command, Del, Echo, Get, InvalidArgument, InvalidCommand, Ping, Psync,
-  ReplConf, Set,
+  Del, Echo, Get, InvalidArgument, InvalidCommand, Ping, Psync, ReplConf, Set,
 }
 import conn.{type Conn, type ConnMessage, Ack, Conn, Forward}
 import conn_manager.{type ConnManagerMessage, AddConn, RmConn}
 import flash
 import gleam/bytes_builder
 import gleam/erlang/process.{type Subject}
-import gleam/io
 import gleam/list
 import gleam/option.{None}
 import gleam/otp/actor
 import glisten.{type Connection, type Handler, type Message, Packet, User}
 import kv_store
-import types.{
-  type Entry, type RespData, Array, BulkString, Integer, Null, SimpleError,
-  SimpleString,
-}
+import types.{type Entry, type RespData, SimpleError, SimpleString}
 import utils
 
 pub fn new(
-  kv_store: Set(RespData, Entry),
+  kv_store: USet(#(RespData, Entry)),
   conn_manager: Subject(ConnManagerMessage),
 ) {
   glisten.handler(
@@ -37,7 +32,7 @@ pub fn serve(handler: Handler(ConnMessage, Conn), port: Int) {
 }
 
 fn on_init_fn(
-  kv_store: Set(RespData, Entry),
+  kv_store: USet(#(RespData, Entry)),
   conn_manager: Subject(ConnManagerMessage),
 ) {
   fn(conn: Connection(ConnMessage)) {
@@ -51,7 +46,7 @@ fn on_init_fn(
 }
 
 fn on_msg_fn(
-  kv_store: Set(RespData, Entry),
+  kv_store: USet(#(RespData, Entry)),
   conn_manager: Subject(ConnManagerMessage),
 ) {
   fn(msg: Message(ConnMessage), state: Conn, conn: Connection(ConnMessage)) {
