@@ -38,27 +38,27 @@ pub fn new(host: String, port: Int, kv_store: USet(#(RespData, Entry))) {
           let assert Ok(_) = mug.send(socket, bits)
           let assert Ok(_) = mug.receive(socket, 100)
 
-          let bits =
-            codec.encode_resp_data(
-              Array([
-                BulkString(Some("REPLCONF")),
-                BulkString(Some("foo")),
-                BulkString(Some("bar")),
-              ]),
-            )
-          let assert Ok(_) = mug.send(socket, bits)
-          let assert Ok(_) = mug.receive(socket, 100)
-
-          let bits =
-            codec.encode_resp_data(
-              Array([
-                BulkString(Some("REPLCONF")),
-                BulkString(Some("bow")),
-                BulkString(Some("baz")),
-              ]),
-            )
-          let assert Ok(_) = mug.send(socket, bits)
-          let assert Ok(_) = mug.receive(socket, 100)
+          // let bits =
+          //   codec.encode_resp_data(
+          //     Array([
+          //       BulkString(Some("REPLCONF")),
+          //       BulkString(Some("foo")),
+          //       BulkString(Some("bar")),
+          //     ]),
+          //   )
+          // let assert Ok(_) = mug.send(socket, bits)
+          // let assert Ok(_) = mug.receive(socket, 100)
+          //
+          // let bits =
+          //   codec.encode_resp_data(
+          //     Array([
+          //       BulkString(Some("REPLCONF")),
+          //       BulkString(Some("bow")),
+          //       BulkString(Some("baz")),
+          //     ]),
+          //   )
+          // let assert Ok(_) = mug.send(socket, bits)
+          // let assert Ok(_) = mug.receive(socket, 100)
 
           let bits =
             codec.encode_resp_data(
@@ -105,7 +105,7 @@ fn msg_handler(msg: MasterConnMessage, state: MasterConn) {
       actor.Stop(process.Normal)
     }
     Packet(bits) -> {
-      io.debug(bits)
+      // io.debug(bits)
       flash.new(flash.InfoLevel, flash.text_writer)
       |> flash.with_group("server")
       |> flash.with_attr(flash.StringAttr("packet", utils.escape_ascii(bits)))
