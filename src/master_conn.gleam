@@ -3,7 +3,6 @@ import codec
 import command.{Del, Set}
 import flash
 import gleam/erlang/process
-import gleam/io
 import gleam/list
 import gleam/option.{Some}
 import gleam/otp/actor.{Failed, Ready, Spec}
