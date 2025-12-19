@@ -138,6 +138,8 @@ fn msg_handler(msg: MasterConnMessage, state: MasterConn) {
             }
           })
 
+          // Request the next packet from master
+          mug.receive_next_packet_as_message(state.socket)
           actor.continue(MasterConn(..state, buffer: rest))
         }
         Error(_) -> {
