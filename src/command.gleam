@@ -3,6 +3,7 @@ import birl/duration
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/string
 import types.{type Entry, type RespData, Array, BulkString, Entry}
 
 pub type Command {
@@ -25,7 +26,7 @@ pub fn parse_all(commands: List(RespData)) {
 }
 
 pub fn parse_command(command: RespData) {
-  case command {
+  case normalize_command(command) {
     Array([BulkString(Some("PING"))]) -> Ok(Ping)
     Array([BulkString(Some("ECHO")), payload]) -> Ok(Echo(payload))
     Array([BulkString(Some("SET")), key, value]) ->
@@ -87,5 +88,21 @@ pub fn parse_command(command: RespData) {
       }
     }
     _ -> Error(InvalidCommand)
+  }
+}
+
+fn normalize_command(command: RespData) -> RespData {
+  case command {
+    Array(items) -> Array(list.index_map(items, normalize_item))
+    other -> other
+  }
+}
+
+fn normalize_item(item: RespData, index: Int) -> RespData {
+  case index, item {
+    // Normalize command name and option keywords to uppercase
+    _, BulkString(Some(s)) if index == 0 || s == "ex" || s == "px" ->
+      BulkString(Some(string.uppercase(s)))
+    _, other -> other
   }
 }

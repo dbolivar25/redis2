@@ -1,8 +1,10 @@
 import birl
+import birl/duration
 import bravo
 import bravo/uset.{type USet}
 import gleam/bit_array
-import gleam/option.{None, Some}
+import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/order.{Eq, Gt}
 import gleam/pair
 import types.{type Entry, type RespData, Entry, Null}
@@ -37,4 +39,47 @@ pub fn delete(set: USet(#(RespData, Entry)), key: RespData) {
 
 pub fn dump(_set: USet(#(RespData, Entry))) {
   empty_rdb |> bit_array.base16_decode
+}
+
+/// Returns all key-value pairs with TTL in milliseconds
+/// Format: List of #(key, value, ttl_ms) where ttl_ms is None for no expiry
+pub fn snapshot(
+  set: USet(#(RespData, Entry)),
+) -> List(#(RespData, RespData, Option(Int))) {
+  let now = birl.utc_now()
+  uset.tab2list(set)
+  |> list.filter_map(fn(kv_pair) {
+    let #(key, Entry(value, expiration)) = kv_pair
+    // Skip expired keys
+    case option.map(expiration, birl.compare(now, _)) {
+      Some(Gt) | Some(Eq) -> Error(Nil)
+      _ -> {
+        // Calculate remaining TTL in milliseconds
+        let ttl_ms = case expiration {
+          None -> None
+          Some(exp_time) -> {
+            let diff = birl.difference(exp_time, now)
+            Some(duration.blur_to(diff, duration.MilliSecond))
+          }
+        }
+        Ok(#(key, value, ttl_ms))
+      }
+    }
+  })
+}
+
+/// Loads snapshot entries into the store
+pub fn load_snapshot(
+  uset: USet(#(RespData, Entry)),
+  entries: List(#(RespData, RespData, Option(Int))),
+) {
+  let now = birl.utc_now()
+  list.each(entries, fn(entry) {
+    let #(key, value, ttl_ms) = entry
+    let expiration = case ttl_ms {
+      None -> None
+      Some(ms) -> Some(birl.add(now, duration.milli_seconds(ms)))
+    }
+    set(uset, key, Entry(value, expiration))
+  })
 }

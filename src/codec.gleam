@@ -103,8 +103,16 @@ fn parse_simple_error(data: BitArray) {
 }
 
 fn parse_integer(data: BitArray) {
-  use #(len, rest) <- result.try(parse_raw_int(data, 0))
-  Ok(#(Integer(len), rest))
+  case data {
+    <<"-":utf8, rest:bits>> -> {
+      use #(value, remaining) <- result.try(parse_raw_int(rest, 0))
+      Ok(#(Integer(-value), remaining))
+    }
+    _ -> {
+      use #(value, rest) <- result.try(parse_raw_int(data, 0))
+      Ok(#(Integer(value), rest))
+    }
+  }
 }
 
 fn parse_bulk_string(data: BitArray) {
@@ -135,7 +143,6 @@ pub fn parse_rdb_file(data: BitArray) {
 fn parse_simple_string_impl(data: BitArray, acc: BitArray) {
   case data {
     <<"\r":utf8>> | <<>> -> Error(Incomplete)
-    <<"\r":utf8, _:bits>> -> Error(InvalidFormat)
     <<"\r\n":utf8, rest:bits>> ->
       case bit_array.to_string(acc) {
         Error(_) -> Error(InvalidUtf)
@@ -198,5 +205,44 @@ fn parse_raw_int(input: BitArray, acc: Int) {
     <<"9":utf8, rest:bits>> -> parse_raw_int(rest, 9 + acc * 10)
     <<"\r\n":utf8, rest:bits>> -> Ok(#(acc, rest))
     _ -> Error(InvalidFormat)
+  }
+}
+
+/// Encodes a snapshot as a RESP3 Array of [key, value, ttl_ms] entries
+pub fn encode_snapshot(
+  entries: List(#(RespData, RespData, Option(Int))),
+) -> RespData {
+  let items =
+    list.map(entries, fn(entry) {
+      let #(key, value, ttl_ms) = entry
+      let ttl_value = case ttl_ms {
+        None -> Integer(-1)
+        Some(ms) -> Integer(ms)
+      }
+      Array([key, value, ttl_value])
+    })
+  Array(items)
+}
+
+/// Decodes a RESP3 Array snapshot into list of (key, value, ttl_ms) entries
+pub fn decode_snapshot(
+  data: RespData,
+) -> Result(List(#(RespData, RespData, Option(Int))), String) {
+  case data {
+    Array(items) -> {
+      list.try_map(items, fn(item) {
+        case item {
+          Array([key, value, Integer(ttl_ms)]) -> {
+            let ttl = case ttl_ms {
+              ms if ms > 0 -> Some(ms)
+              _ -> None
+            }
+            Ok(#(key, value, ttl))
+          }
+          _ -> Error("Invalid snapshot entry format")
+        }
+      })
+    }
+    _ -> Error("Snapshot must be an array")
   }
 }

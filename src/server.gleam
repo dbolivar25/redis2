@@ -109,18 +109,19 @@ fn on_msg_fn(
                       case id, offset {
                         "?", -1 -> {
                           conn_manager.set_replica(conn_manager, conn.subject)
-                          let encoded =
+                          // Send FULLRESYNC response
+                          let fullresync =
                             codec.encode_resp_data(SimpleString(
                               "FULLRESYNC master 0",
                             ))
-                          let encoded_rdb_file =
-                            kv_store.dump(kv_store)
-                            |> utils.expect("rdb file is valid")
-                            |> types.RDBFile
+                          // Get and encode snapshot of all data
+                          let snapshot_data = kv_store.snapshot(kv_store)
+                          let encoded_snapshot =
+                            codec.encode_snapshot(snapshot_data)
                             |> codec.encode_resp_data
                           let bytes =
-                            bytes_builder.from_bit_array(encoded)
-                            |> bytes_builder.append(encoded_rdb_file)
+                            bytes_builder.from_bit_array(fullresync)
+                            |> bytes_builder.append(encoded_snapshot)
                           let _ = glisten.send(conn, bytes)
                         }
                         _, _ -> {
